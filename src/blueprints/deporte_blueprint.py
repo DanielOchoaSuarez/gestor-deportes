@@ -31,7 +31,7 @@ def obtener_plan():
     return make_response(jsonify({'result': result}), 200)
 
 
-@deporte_blueprint.route('/obtener_ejercicio', methods=['POST'])
+@deporte_blueprint.route('/obtener_ejercicios', methods=['POST'])
 def obtener_ejercicio():
     body = request.get_json()
     info = {
