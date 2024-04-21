@@ -51,6 +51,14 @@ class CrearPlan(BaseCommand):
         resp = []
 
         for ejercicio in ejercicios:
+
+            if 'id' in ejercicio:
+                ejercicio_registrado = {
+                    'id': ejercicio['id'],
+                }
+                resp.append(ejercicio_registrado)
+                continue
+
             if not ejercicio['duracion'] or ejercicio['duracion'] <= 0:
                 logger.error("Duracion del ejercicio obligatorio")
                 raise BadRequest
@@ -85,13 +93,18 @@ class CrearPlan(BaseCommand):
     def execute(self):
         logger.info(f'Creando plan deportivo {self.nombre}')
 
-        print('*******')
-        print(self.ejercicios)
-
         for index, ejercicio in enumerate(self.ejercicios):
-            tmp = EjercicioDeporte(**ejercicio)
-            db_session.add(tmp)
-            db_session.commit()
+
+            tmp: EjercicioDeporte
+
+            if 'id' in ejercicio:
+                tmp = EjercicioDeporte.query.filter_by(
+                    id=ejercicio['id']).first()
+
+            else:
+                tmp = EjercicioDeporte(**ejercicio)
+                db_session.add(tmp)
+                db_session.commit()
 
             plan_ejercicio = {
                 'id_ejercicio_deporte': tmp.id,
