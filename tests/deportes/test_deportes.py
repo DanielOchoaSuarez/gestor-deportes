@@ -25,7 +25,11 @@ def setup_data():
     db_session.add(deporte_random)
     db_session.commit()
     logger.info('Deporte creado: ' + deporte_random.nombre)
-    yield deporte_random
+
+    yield {
+        'deporte': deporte_random,
+    }
+
     logger.info("Fin TestDeportes")
     db_session.delete(deporte_random)
     db_session.commit()
@@ -43,9 +47,9 @@ class TestDeportes():
             assert response.status_code == 200
             assert len(response_json) >= 1
 
-    def test_obtener_deporte(self, setup_data: Deporte):
+    def test_obtener_deporte(self, setup_data: dict):
         with app.test_client() as test_client:
-            id_deporte = str(setup_data.id)
+            id_deporte = str(setup_data['deporte'].id)
             response = test_client.get(
                 '/gestor-deportes/deportes/obtener_deportes/' + id_deporte)
             response_json = json.loads(response.data)

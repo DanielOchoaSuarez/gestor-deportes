@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 class ObtenerDeportes(BaseCommand):
     def __init__(self):
+        """
+        Constructor de la clase
+        """
         pass
 
     def execute(self):
