@@ -1,12 +1,15 @@
 import json
 import pytest
 import logging
+import uuid
 from unittest.mock import patch, MagicMock
 
 from faker import Faker
 from src.main import app
 from src.models.db import db_session
 from src.models.deporte import Deporte
+from src.models.ejercicio_deporte import EjercicioDeporte
+from src.models.plan_ejercicio import PlanEjercicio
 
 
 fake = Faker()
@@ -17,6 +20,7 @@ logger = logging.getLogger(__name__)
 def setup_data():
     logger.info("Inicio TestDeportes")
 
+    # Creción deporte
     deporte = {
         'nombre': fake.name(),
     }
@@ -26,11 +30,38 @@ def setup_data():
     db_session.commit()
     logger.info('Deporte creado: ' + deporte_random.nombre)
 
+    # Creación ejercicio deporte
+    ejercicio = {
+        'nombre': fake.name(),
+        'duracion': 30,
+        'descripcion': fake.name(),
+        'id_deporte': deporte_random.id,
+    }
+    ejercicio_deporte_random = EjercicioDeporte(**ejercicio)
+    db_session.add(ejercicio_deporte_random)
+    db_session.commit()
+    logger.info('Ejercicio deporte creado: ' + ejercicio_deporte_random.nombre)
+
+    # Creación plan
+    plan = {
+        'id_plan': uuid.uuid4(),
+        'orden': 0,
+        'id_ejercicio_deporte': ejercicio_deporte_random.id,
+    }
+    plan_random = PlanEjercicio(**plan)
+    db_session.add(plan_random)
+    db_session.commit()
+    logger.info('Plan creado: ' + str(plan_random.id))
+
     yield {
         'deporte': deporte_random,
+        'ejercicio_deporte': ejercicio_deporte_random,
+        'plan_ejercicio': plan_random,
     }
 
     logger.info("Fin TestDeportes")
+    db_session.delete(plan_random)
+    db_session.delete(ejercicio_deporte_random)
     db_session.delete(deporte_random)
     db_session.commit()
 
@@ -57,3 +88,19 @@ class TestDeportes():
             assert response.status_code == 200
             assert response_json != None
             assert response_json['id'] == id_deporte
+
+    def test_obtener_plan(self, setup_data: dict):
+        with app.test_client() as test_client:
+            plan_ejercicio: PlanEjercicio = setup_data['plan_ejercicio']
+            req = {
+                'id_plan': str(plan_ejercicio.id_plan),
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/obtener_plan', json=req)
+            response_json = json.loads(response.data)
+
+            assert response.status_code == 200
+            assert response_json != None
+            assert response_json['result'] != None
+            assert len(response_json['result']) >= 1
