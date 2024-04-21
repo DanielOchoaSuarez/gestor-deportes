@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, make_response, request
 from src.commands.deportes.crear_plan import CrearPlan
 from src.commands.deportes.obtener_deporte import ObtenerDeporte
 from src.commands.deportes.obtener_deportes import ObtenerDeportes
-from src.commands.deportes.obtener_ejercicio import ObtenerEjercicio
+from src.commands.deportes.obtener_ejercicios import ObtenerEjercicios
 from src.commands.deportes.obtener_plan import ObtenerPlan
 
 
@@ -38,7 +38,7 @@ def obtener_ejercicio():
         'nombre': body.get('nombre', None),
         'id_deporte': body.get('id_deporte', None),
     }
-    result = ObtenerEjercicio(**info).execute()
+    result = ObtenerEjercicios(**info).execute()
     return make_response(jsonify({'result': result}), 200)
 
 

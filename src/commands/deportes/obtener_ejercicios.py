@@ -11,7 +11,7 @@ from src.models.ejercicio_deporte import EjercicioDeporte
 logger = logging.getLogger(__name__)
 
 
-class ObtenerEjercicio(BaseCommand):
+class ObtenerEjercicios(BaseCommand):
     def __init__(self, **info):
         if info['nombre'] is None:
             logger.error("Nombre del ejercicio es obligatorio")
@@ -30,23 +30,24 @@ class ObtenerEjercicio(BaseCommand):
         self.id_deporte = info['id_deporte']
 
     def execute(self):
-        logger.info("Obteniendo ejercicio " + self.nombre)
+        logger.info("Obteniendo ejercicios que contengan " + self.nombre)
 
         comodin = f"%{self.nombre}%"
-        ejercicio: EjercicioDeporte = EjercicioDeporte.query.filter(
+        ejercicios: EjercicioDeporte = EjercicioDeporte.query.filter(
             EjercicioDeporte.id_deporte == self.id_deporte,
             func.upper(EjercicioDeporte.nombre).like(comodin.upper())
-        ).first()
+        ).all()
 
-        if ejercicio is None:
-            return None
+        response = []
 
-        logger.info("Ejercicio encontrado")
-        response = {
-            'id': ejercicio.id,
-            'nombre': ejercicio.nombre,
-            'duracion': ejercicio.duracion,
-            'descripcion': ejercicio.descripcion
-        }
+        for ejercicio in ejercicios:
+            logger.info(f"Ejercicio encontrado: {ejercicio.nombre}")
+            tmp = {
+                'id': ejercicio.id,
+                'nombre': ejercicio.nombre,
+                'duracion': ejercicio.duracion,
+                'descripcion': ejercicio.descripcion
+            }
+            response.append(tmp)
 
         return response
