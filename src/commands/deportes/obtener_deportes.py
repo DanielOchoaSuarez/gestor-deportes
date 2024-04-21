@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class ObtenerDeportes(BaseCommand):
     def __init__(self):
         """
-        Constructor de la clase
+        Constructor de la clase ObtenerDeportes
         """
         pass
 
