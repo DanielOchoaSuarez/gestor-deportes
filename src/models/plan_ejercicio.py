@@ -1,5 +1,4 @@
-from marshmallow import Schema, fields
-from src.models.ejercicio_deporte import EjercicioDeporte, EjercicioDeporteSchema
+from src.models.ejercicio_deporte import EjercicioDeporte
 from .db import Base
 from sqlalchemy import UUID, Column, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, relationship
@@ -19,8 +18,3 @@ class PlanEjercicio(Model, Base):
         self.id_ejercicio_deporte = id_ejercicio_deporte
         self.orden = orden
         self.id_plan = id_plan
-
-class PlanEjercicioJsonSchema(Schema):
-    id = fields.String()
-    id_ejercicio_deporte = fields.String()
-    ejercicio_deporte = fields.Nested(EjercicioDeporteSchema)

@@ -22,10 +22,3 @@ class EjercicioDeporte(Model, Base):
         self.nombre = nombre
         self.duracion = duracion
         self.descripcion = descripcion
-
-
-class EjercicioDeporteSchema(Schema):
-    deporte = fields.Nested(DeporteSchema)
-    nombre = fields.String()
-    duracion = fields.Integer()
-    descripcion = fields.String()

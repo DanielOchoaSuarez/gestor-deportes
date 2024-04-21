@@ -2,7 +2,7 @@ import logging
 
 from src.commands.base_command import BaseCommand
 from src.errors.errors import BadRequest
-from src.models.plan_ejercicio import PlanEjercicio, PlanEjercicioJsonSchema
+from src.models.plan_ejercicio import PlanEjercicio
 from src.utils.str_utils import str_none_or_empty
 
 
@@ -28,7 +28,20 @@ class ObtenerPlan(BaseCommand):
         if plan_ejercicios is None or len(plan_ejercicios) == 0:
             logger.error("Plan de entrenamiento no encontrado")
             return []
-        else:
-            logger.info("Plan ejercicios encontrado")
-            schema = PlanEjercicioJsonSchema(many=True)
-            return schema.dump(plan_ejercicios)
+
+        logger.info("Plan ejercicios encontrado")
+        resp = []
+
+        pe: PlanEjercicio
+        for pe in plan_ejercicios:
+            tmp = {
+                'deporte_id': pe.ejercicio_deporte.deporte.id,
+                'deporte_nombre': pe.ejercicio_deporte.deporte.nombre,
+                'ejercicio_id': pe.ejercicio_deporte.id,
+                'ejercicio_nombre': pe.ejercicio_deporte.nombre,
+                'ejercicio_duracion': pe.ejercicio_deporte.duracion,
+                'ejercicio_descripcion': pe.ejercicio_deporte.descripcion,
+            }
+            resp.append(tmp)
+
+        return resp
