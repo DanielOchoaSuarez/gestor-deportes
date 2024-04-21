@@ -59,15 +59,15 @@ class CrearPlan(BaseCommand):
                 resp.append(ejercicio_registrado)
                 continue
 
-            if not ejercicio['duracion'] or ejercicio['duracion'] <= 0:
+            if 'duracion' not in ejercicio or ejercicio['duracion'] <= 0:
                 logger.error("Duracion del ejercicio obligatorio")
                 raise BadRequest
 
-            if str_none_or_empty(ejercicio['descripcion']):
+            if 'descripcion' not in ejercicio:
                 logger.error("Descripcion del ejercicio obligatorio")
                 raise BadRequest
 
-            if str_none_or_empty(ejercicio['nombre']):
+            if 'nombre' not in ejercicio:
                 logger.error("Nombre del ejercicio obligatorio")
                 raise BadRequest
 

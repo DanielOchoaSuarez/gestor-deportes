@@ -205,3 +205,41 @@ class TestDeportes():
                 '/gestor-deportes/deportes/crear_plan', json=body)
 
             assert response.status_code == 400
+
+    def test_crear_plan_sin_ejercicios(self, setup_data: dict):
+        with app.test_client() as test_client:
+            deporte: Deporte = setup_data['deporte']
+
+            body = {
+                'id_plan': str(uuid.uuid4()),
+                'id_deporte': deporte.id,
+                'nombre': fake.name(),
+                'ejercicios': []
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/crear_plan', json=body)
+
+            assert response.status_code == 400
+
+    def test_crear_plan_ejercicios_sin_nombre(self, setup_data: dict):
+        with app.test_client() as test_client:
+            deporte: Deporte = setup_data['deporte']
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+
+            body = {
+                'id_plan': str(uuid.uuid4()),
+                'id_deporte': deporte.id,
+                'nombre': fake.name(),
+                'ejercicios': [
+                    {
+                        'duracion': 15,
+                        'descripcion': fake.name(),
+                    }
+                ]
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/crear_plan', json=body)
+
+            assert response.status_code == 400
