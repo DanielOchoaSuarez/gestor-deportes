@@ -23,6 +23,11 @@ class ResourceNotFound(ApiError):
     description = "resource_not_found"
 
 
+class SportNotFound(ApiError):
+    code = 404
+    description = "sport_not_found"
+
+
 class PreconditionFailed(ApiError):
     code = 412
     description = "precondition_failed"

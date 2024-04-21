@@ -65,7 +65,7 @@ Si requiere iniciar la aplicación para desarrollar nuevas funcionalidades o cor
 El proyecto cuenta con el archivo Dockerfile con toda la configuración necesaria para ejecutar la aplicación a través de [gunicorn](https://flask.palletsprojects.com/en/3.0.x/deploying/gunicorn/). Para crear la imagen y correr la aplicación mediante un contenedor debe ejecutar los siguientes comandos en el orden establecido:
 
 1. `docker build . -t sport-app-gestor-deportes`
-2. `docker run -p 3000:3000 --name gestor-deportes --env-file .env sport-app-gestor-deportes`
+2. `docker run -p 3003:3003 --name gestor-deportes --env-file .env sport-app-gestor-deportes`
 
 ## Pruebas unitarias
 
