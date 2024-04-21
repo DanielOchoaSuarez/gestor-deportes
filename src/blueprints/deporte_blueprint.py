@@ -1,8 +1,9 @@
-import os
 import logging
 from flask import Blueprint, jsonify, make_response, request
+from src.commands.deportes.crear_plan import CrearPlan
 from src.commands.deportes.obtener_deporte import ObtenerDeporte
 from src.commands.deportes.obtener_deportes import ObtenerDeportes
+from src.commands.deportes.obtener_ejercicio import ObtenerEjercicio
 from src.commands.deportes.obtener_plan import ObtenerPlan
 
 
@@ -27,4 +28,28 @@ def obtener_plan():
         'id_plan': body.get('id_plan', None),
     }
     result = ObtenerPlan(**info).execute()
+    return make_response(jsonify({'result': result}), 200)
+
+
+@deporte_blueprint.route('/obtener_ejercicio', methods=['POST'])
+def obtener_ejercicio():
+    body = request.get_json()
+    info = {
+        'nombre': body.get('nombre', None),
+        'id_deporte': body.get('id_deporte', None),
+    }
+    result = ObtenerEjercicio(**info).execute()
+    return make_response(jsonify({'result': result}), 200)
+
+
+@deporte_blueprint.route('/crear_plan', methods=['POST'])
+def crear_plan():
+    body = request.get_json()
+    info = {
+        'id_deporte': body.get('id_deporte', None),
+        'id_plan': body.get('id_plan', None),
+        'nombre': body.get('nombre', None),
+        'ejercicios': body.get('ejercicios', None),
+    }
+    result = CrearPlan(**info).execute()
     return make_response(jsonify({'result': result}), 200)
