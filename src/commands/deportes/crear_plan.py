@@ -93,6 +93,8 @@ class CrearPlan(BaseCommand):
     def execute(self):
         logger.info(f'Creando plan deportivo {self.nombre}')
 
+        resp = []
+
         for index, ejercicio in enumerate(self.ejercicios):
 
             tmp: EjercicioDeporte
@@ -115,5 +117,6 @@ class CrearPlan(BaseCommand):
             plan_ejercicio = PlanEjercicio(**plan_ejercicio)
             db_session.add(plan_ejercicio)
             db_session.commit()
+            resp.append(plan_ejercicio.id)
 
-        return "ok"
+        return resp

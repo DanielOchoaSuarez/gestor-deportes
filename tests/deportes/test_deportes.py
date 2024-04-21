@@ -104,3 +104,104 @@ class TestDeportes():
             assert response_json != None
             assert response_json['result'] != None
             assert len(response_json['result']) >= 1
+
+    def test_obtener_ejercicios_exitoso(self, setup_data: dict):
+        with app.test_client() as test_client:
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            body = {
+                'nombre': ejercicio_deporte.nombre,
+                'id_deporte': ejercicio_deporte.deporte.id
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/obtener_ejercicios', json=body)
+            response_json = json.loads(response.data)
+
+            assert response.status_code == 200
+
+    def test_obtener_ejercicios_sin_nombre(self, setup_data: dict):
+        with app.test_client() as test_client:
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            body = {
+                'id_deporte': ejercicio_deporte.deporte.id
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/obtener_ejercicios', json=body)
+
+            assert response.status_code == 400
+
+    def test_obtener_ejercicios_sin_id_deporte(self, setup_data: dict):
+        with app.test_client() as test_client:
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            body = {
+                'nombre': ejercicio_deporte.nombre,
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/obtener_ejercicios', json=body)
+
+            assert response.status_code == 400
+
+    def test_obtener_ejercicios_error_longitud_nombre(self, setup_data: dict):
+        with app.test_client() as test_client:
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            body = {
+                'nombre': 'a',
+                'id_deporte': ejercicio_deporte.deporte.id
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/obtener_ejercicios', json=body)
+
+            assert response.status_code == 400
+
+    def test_crear_plan(self, setup_data: dict):
+        with app.test_client() as test_client:
+            deporte: Deporte = setup_data['deporte']
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+
+            body = {
+                'id_plan': str(uuid.uuid4()),
+                'id_deporte': deporte.id,
+                'nombre': fake.name(),
+                'ejercicios': [
+                    {
+                        'id': ejercicio_deporte.id,
+                    }
+                ]
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/crear_plan', json=body)
+            response_json = json.loads(response.data)
+
+            assert response.status_code == 200
+            assert response_json != None
+            assert response_json['result'] != None
+            assert len(response_json['result']) >= 1
+
+            for plan_ejercicio in response_json['result']:
+                PlanEjercicio.query.filter_by(
+                    id=plan_ejercicio).delete()
+                db_session.commit()
+
+    def test_crear_plan_sin_id_plan(self, setup_data: dict):
+        with app.test_client() as test_client:
+            deporte: Deporte = setup_data['deporte']
+            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+
+            body = {
+                'id_deporte': deporte.id,
+                'nombre': fake.name(),
+                'ejercicios': [
+                    {
+                        'id': ejercicio_deporte.id,
+                    }
+                ]
+            }
+
+            response = test_client.post(
+                '/gestor-deportes/deportes/crear_plan', json=body)
+
+            assert response.status_code == 400
