@@ -1,0 +1,39 @@
+name: deploy to aws from tag
+
+on:
+  workflow_dispatch:
+
+env:
+  ECR_REPOSITORY: sport-app-gestor-deportes
+  EKS_CLUSTER_NAME: pf-cluster
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: get tag name
+        run: |
+          echo "tag name from github_ref_name: $GITHUB_REF_NAME"
+          echo "tag name from github.ref_name: ${{github.ref_name}}"
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{env.AWS_REGION}}
+      - name: login to aws ecr
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: update eks config
+        run: aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $AWS_REGION
+      - name: deploy to eks
+        env:
+          ECR_REGISTRY: ${{steps.login-ecr.outputs.registry}}
+          IMAGE_TAG: ${{github.ref_name}}
+        run: |
+          echo "image is: $ECR_REPOSITORY:$IMAGE_TAG"
+          sed -i.bak "s|DOCKER_IMAGE|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" kubernetes/deployment.yaml && \
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
