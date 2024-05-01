@@ -120,7 +120,7 @@ class CrearPlan(BaseCommand):
                 db_session.commit()
                 resp.append(plan_ejercicio.id)
             except Exception as e:
-                logger.error(f"Error al crear plan ejercicios {e}", e)
+                logger.error(f"Error al crear plan ejercicios {e}")
                 db_session.rollback()
                 raise ApiError
 
