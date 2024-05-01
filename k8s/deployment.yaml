@@ -30,11 +30,11 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 60
           resources:
-            limits:
-              memory: "2Gi"
-              cpu: "1000m"
             requests:
-              memory: "1Gi"
+              memory: "512Mi"
+              cpu: "50m"
+            limits:
+              memory: "1024Mi"
               cpu: "500m"
           env:
             - name: DB_HOST

@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import func
 
 from src.commands.base_command import BaseCommand
-from src.errors.errors import BadRequest, SportNotFound
+from src.errors.errors import ApiError, BadRequest, SportNotFound
 from src.models.db import db_session
 from src.models.deporte import Deporte
 from src.models.ejercicio_deporte import EjercicioDeporte
@@ -97,26 +97,31 @@ class CrearPlan(BaseCommand):
 
         for index, ejercicio in enumerate(self.ejercicios):
 
-            tmp: EjercicioDeporte
+            try:
+                tmp: EjercicioDeporte
 
-            if 'id' in ejercicio:
-                tmp = EjercicioDeporte.query.filter_by(
-                    id=ejercicio['id']).first()
+                if 'id' in ejercicio:
+                    tmp = EjercicioDeporte.query.filter_by(
+                        id=ejercicio['id']).first()
 
-            else:
-                tmp = EjercicioDeporte(**ejercicio)
-                db_session.add(tmp)
+                else:
+                    tmp = EjercicioDeporte(**ejercicio)
+                    db_session.add(tmp)
+                    db_session.commit()
+
+                plan_ejercicio = {
+                    'id_ejercicio_deporte': tmp.id,
+                    'orden': index,
+                    'id_plan': self.id_plan,
+                }
+
+                plan_ejercicio = PlanEjercicio(**plan_ejercicio)
+                db_session.add(plan_ejercicio)
                 db_session.commit()
-
-            plan_ejercicio = {
-                'id_ejercicio_deporte': tmp.id,
-                'orden': index,
-                'id_plan': self.id_plan,
-            }
-
-            plan_ejercicio = PlanEjercicio(**plan_ejercicio)
-            db_session.add(plan_ejercicio)
-            db_session.commit()
-            resp.append(plan_ejercicio.id)
+                resp.append(plan_ejercicio.id)
+            except Exception as e:
+                logger.error(f"Error al crear plan ejercicios {e}", e)
+                db_session.rollback()
+                raise ApiError
 
         return resp
