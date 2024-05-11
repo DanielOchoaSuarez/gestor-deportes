@@ -1,6 +1,7 @@
 import logging
 
 from src.commands.base_command import BaseCommand
+from src.models.db import db_session
 from src.models.deporte import Deporte, DeporteSchema
 
 
@@ -13,11 +14,14 @@ class ObtenerDeporte(BaseCommand):
 
     def execute(self):
         logger.info("Obteniendo deporte con id " + self.id_deporte)
-        deporte = Deporte.query.filter_by(id=self.id_deporte).first()
 
-        if deporte is None:
-            return None
+        with db_session() as session:
+            deporte = session.query(Deporte).filter_by(
+                id=self.id_deporte).first()
 
-        else:
-            schema = DeporteSchema()
-            return schema.dump(deporte)
+            if deporte is None:
+                return None
+
+            else:
+                schema = DeporteSchema()
+                return schema.dump(deporte)

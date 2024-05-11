@@ -2,6 +2,7 @@ import logging
 
 from src.commands.base_command import BaseCommand
 from src.errors.errors import BadRequest
+from src.models.db import db_session
 from src.models.plan_ejercicio import PlanEjercicio
 from src.utils.str_utils import str_none_or_empty
 
@@ -22,26 +23,29 @@ class ObtenerPlan(BaseCommand):
 
     def execute(self):
         logger.info("Buscando plan de entrenamiento deportivo " + self.id_plan)
-        plan_ejercicios = PlanEjercicio.query.filter_by(
-            id_plan=self.id_plan).all()
 
-        if plan_ejercicios is None or len(plan_ejercicios) == 0:
-            logger.error("Plan de entrenamiento no encontrado")
-            return []
+        with db_session() as session:
 
-        logger.info("Plan ejercicios encontrado")
-        resp = []
+            plan_ejercicios = session.query(PlanEjercicio).filter_by(
+                id_plan=self.id_plan).all()
 
-        pe: PlanEjercicio
-        for pe in plan_ejercicios:
-            tmp = {
-                'deporte_id': pe.ejercicio_deporte.deporte.id,
-                'deporte_nombre': pe.ejercicio_deporte.deporte.nombre,
-                'ejercicio_id': pe.ejercicio_deporte.id,
-                'ejercicio_nombre': pe.ejercicio_deporte.nombre,
-                'ejercicio_duracion': pe.ejercicio_deporte.duracion,
-                'ejercicio_descripcion': pe.ejercicio_deporte.descripcion,
-            }
-            resp.append(tmp)
+            if plan_ejercicios is None or len(plan_ejercicios) == 0:
+                logger.error("Plan de entrenamiento no encontrado")
+                return []
 
-        return resp
+            logger.info("Plan ejercicios encontrado")
+            resp = []
+
+            pe: PlanEjercicio
+            for pe in plan_ejercicios:
+                tmp = {
+                    'deporte_id': pe.ejercicio_deporte.deporte.id,
+                    'deporte_nombre': pe.ejercicio_deporte.deporte.nombre,
+                    'ejercicio_id': pe.ejercicio_deporte.id,
+                    'ejercicio_nombre': pe.ejercicio_deporte.nombre,
+                    'ejercicio_duracion': pe.ejercicio_deporte.duracion,
+                    'ejercicio_descripcion': pe.ejercicio_deporte.descripcion,
+                }
+                resp.append(tmp)
+
+            return resp
