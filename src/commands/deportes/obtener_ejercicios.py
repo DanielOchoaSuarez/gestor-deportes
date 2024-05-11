@@ -4,7 +4,7 @@ from sqlalchemy import func
 
 from src.commands.base_command import BaseCommand
 from src.errors.errors import BadRequest
-from src.models.deporte import Deporte, DeporteSchema
+from src.models.db import db_session
 from src.models.ejercicio_deporte import EjercicioDeporte
 
 
@@ -32,22 +32,25 @@ class ObtenerEjercicios(BaseCommand):
     def execute(self):
         logger.info("Obteniendo ejercicios que contengan " + self.nombre)
 
-        comodin = f"%{self.nombre}%"
-        ejercicios: EjercicioDeporte = EjercicioDeporte.query.filter(
-            EjercicioDeporte.id_deporte == self.id_deporte,
-            func.upper(EjercicioDeporte.nombre).like(comodin.upper())
-        ).all()
+        with db_session() as session:
 
-        response = []
+            comodin = f"%{self.nombre}%"
 
-        for ejercicio in ejercicios:
-            logger.info(f"Ejercicio encontrado: {ejercicio.nombre}")
-            tmp = {
-                'id': ejercicio.id,
-                'nombre': ejercicio.nombre,
-                'duracion': ejercicio.duracion,
-                'descripcion': ejercicio.descripcion
-            }
-            response.append(tmp)
+            ejercicios = session.query(EjercicioDeporte).filter(
+                EjercicioDeporte.id_deporte == self.id_deporte,
+                func.upper(EjercicioDeporte.nombre).like(comodin.upper())).all()
 
-        return response
+            response = []
+
+            ejercicio: EjercicioDeporte
+            for ejercicio in ejercicios:
+                logger.info(f"Ejercicio encontrado: {ejercicio.nombre}")
+                tmp = {
+                    'id': ejercicio.id,
+                    'nombre': ejercicio.nombre,
+                    'duracion': ejercicio.duracion,
+                    'descripcion': ejercicio.descripcion
+                }
+                response.append(tmp)
+
+            return response

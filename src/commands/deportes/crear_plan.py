@@ -29,18 +29,19 @@ class CrearPlan(BaseCommand):
             logger.error("Deporte Obligatorio")
             raise BadRequest
 
-        deporte: Deporte = Deporte.query.filter_by(
-            id=info['id_deporte']).first()
-        if not deporte:
-            logger.error("Deporte no encontrado")
-            raise SportNotFound
+        with db_session() as session:
+            deporte: Deporte = session.query(Deporte).filter_by(
+                id=info['id_deporte']).first()
+            if not deporte:
+                logger.error("Deporte no encontrado")
+                raise SportNotFound
+            self.deporte = deporte
 
         ejercicios = self._validar_ejercicios(
             id_deporte=info['id_deporte'], ejercicios=info['ejercicios'])
 
         self.nombre = info['nombre']
         self.id_plan = info['id_plan']
-        self.deporte = deporte
         self.ejercicios = ejercicios
 
     def _validar_ejercicios(self, id_deporte, ejercicios):
@@ -50,78 +51,88 @@ class CrearPlan(BaseCommand):
 
         resp = []
 
-        for ejercicio in ejercicios:
+        with db_session() as session:
+            for ejercicio in ejercicios:
 
-            if 'id' in ejercicio:
-                ejercicio_registrado = {
-                    'id': ejercicio['id'],
+                if 'id' in ejercicio:
+                    ejercicio_registrado = {
+                        'id': ejercicio['id'],
+                    }
+                    resp.append(ejercicio_registrado)
+                    continue
+
+                if 'duracion' not in ejercicio or ejercicio['duracion'] <= 0:
+                    logger.error("Duracion del ejercicio obligatorio")
+                    raise BadRequest
+
+                if 'descripcion' not in ejercicio:
+                    logger.error("Descripcion del ejercicio obligatorio")
+                    raise BadRequest
+
+                if 'nombre' not in ejercicio:
+                    logger.error("Nombre del ejercicio obligatorio")
+                    raise BadRequest
+
+                ejercicio_deporte: EjercicioDeporte = session.query(EjercicioDeporte).filter(
+                    EjercicioDeporte.id_deporte == id_deporte,
+                    func.upper(EjercicioDeporte.nombre).like(ejercicio['nombre'].upper())).first()
+
+                if ejercicio_deporte:
+                    logger.error("Ejercicio ya registrado")
+                    raise BadRequest
+
+                nuevo_ejercicio = {
+                    'nombre': ejercicio['nombre'],
+                    'duracion': ejercicio['duracion'],
+                    'descripcion': ejercicio['descripcion'],
+                    'id_deporte': id_deporte,
                 }
-                resp.append(ejercicio_registrado)
-                continue
 
-            if 'duracion' not in ejercicio or ejercicio['duracion'] <= 0:
-                logger.error("Duracion del ejercicio obligatorio")
-                raise BadRequest
+                resp.append(nuevo_ejercicio)
 
-            if 'descripcion' not in ejercicio:
-                logger.error("Descripcion del ejercicio obligatorio")
-                raise BadRequest
-
-            if 'nombre' not in ejercicio:
-                logger.error("Nombre del ejercicio obligatorio")
-                raise BadRequest
-
-            ejercicio_deporte: EjercicioDeporte = EjercicioDeporte.query.filter(
-                EjercicioDeporte.id_deporte == id_deporte,
-                func.upper(EjercicioDeporte.nombre).like(ejercicio['nombre'].upper())).first()
-
-            if ejercicio_deporte:
-                logger.error("Ejercicio ya registrado")
-                raise BadRequest
-
-            nuevo_ejercicio = {
-                'nombre': ejercicio['nombre'],
-                'duracion': ejercicio['duracion'],
-                'descripcion': ejercicio['descripcion'],
-                'id_deporte': id_deporte,
-            }
-
-            resp.append(nuevo_ejercicio)
-
-        return resp
+            return resp
 
     def execute(self):
         logger.info(f'Creando plan deportivo {self.nombre}')
 
         resp = []
 
-        for index, ejercicio in enumerate(self.ejercicios):
+        with db_session() as session:
+            for index, ejercicio in enumerate(self.ejercicios):
 
-            try:
-                tmp: EjercicioDeporte
+                try:
+                    tmp: EjercicioDeporte
 
-                if 'id' in ejercicio:
-                    tmp = EjercicioDeporte.query.filter_by(
-                        id=ejercicio['id']).first()
+                    print(ejercicio)
+                    print(ejercicio['id'])
 
-                else:
-                    tmp = EjercicioDeporte(**ejercicio)
-                    db_session.add(tmp)
-                    db_session.commit()
+                    if 'id' in ejercicio:
+                        print('Entro por aqui 1')
+                        tmp = session.query(EjercicioDeporte).filter(
+                            EjercicioDeporte.id == ejercicio['id']).first()
 
-                plan_ejercicio = {
-                    'id_ejercicio_deporte': tmp.id,
-                    'orden': index,
-                    'id_plan': self.id_plan,
-                }
+                    else:
+                        print('Entro por aqui 2')
+                        tmp = EjercicioDeporte(**ejercicio)
+                        session.add(tmp)
+                        session.commit()
 
-                plan_ejercicio = PlanEjercicio(**plan_ejercicio)
-                db_session.add(plan_ejercicio)
-                db_session.commit()
-                resp.append(plan_ejercicio.id)
-            except Exception as e:
-                logger.error(f"Error al crear plan ejercicios {e}")
-                db_session.rollback()
-                raise ApiError
+                    print('Salida')
+                    print(tmp)
 
-        return resp
+                    plan_ejercicio = {
+                        'id_ejercicio_deporte': tmp.id,
+                        'orden': index,
+                        'id_plan': self.id_plan,
+                    }
+
+                    plan_ejercicio = PlanEjercicio(**plan_ejercicio)
+                    session.add(plan_ejercicio)
+                    session.commit()
+                    resp.append(plan_ejercicio.id)
+                except Exception as e:
+                    logger.error(f"Error al crear plan ejercicios {e}")
+                    session.rollback()
+                    raise ApiError
+
+            return resp

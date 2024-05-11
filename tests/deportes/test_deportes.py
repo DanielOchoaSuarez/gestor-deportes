@@ -20,53 +20,59 @@ logger = logging.getLogger(__name__)
 def setup_data():
     logger.info("Inicio TestDeportes")
 
-    # Creción deporte
-    deporte = {
-        'nombre': fake.name(),
-    }
-    deporte_random = Deporte(**deporte)
+    with db_session() as session:
 
-    db_session.add(deporte_random)
-    db_session.commit()
-    logger.info('Deporte creado: ' + deporte_random.nombre)
+        # Creción deporte
+        deporte = {
+            'nombre': fake.name(),
+        }
+        deporte_random = Deporte(**deporte)
 
-    # Creación ejercicio deporte
-    ejercicio = {
-        'nombre': fake.name(),
-        'duracion': 30,
-        'descripcion': fake.name(),
-        'id_deporte': deporte_random.id,
-    }
-    ejercicio_deporte_random = EjercicioDeporte(**ejercicio)
-    db_session.add(ejercicio_deporte_random)
-    db_session.commit()
-    logger.info('Ejercicio deporte creado: ' + ejercicio_deporte_random.nombre)
+        session.add(deporte_random)
+        session.commit()
+        logger.info('Deporte creado: ' + deporte_random.nombre)
 
-    # Creación plan
-    plan = {
-        'id_plan': uuid.uuid4(),
-        'orden': 0,
-        'id_ejercicio_deporte': ejercicio_deporte_random.id,
-    }
-    plan_random = PlanEjercicio(**plan)
-    db_session.add(plan_random)
-    db_session.commit()
-    logger.info('Plan creado: ' + str(plan_random.id))
+        # Creación ejercicio deporte
+        ejercicio = {
+            'nombre': fake.name(),
+            'duracion': 30,
+            'descripcion': fake.name(),
+            'id_deporte': deporte_random.id,
+        }
+        ejercicio_deporte_random = EjercicioDeporte(**ejercicio)
+        session.add(ejercicio_deporte_random)
+        session.commit()
+        logger.info('Ejercicio deporte creado: ' +
+                    ejercicio_deporte_random.nombre +
+                    str(ejercicio_deporte_random.id))
 
-    yield {
-        'deporte': deporte_random,
-        'ejercicio_deporte': ejercicio_deporte_random,
-        'plan_ejercicio': plan_random,
-    }
+        # Creación plan
+        plan = {
+            'id_plan': uuid.uuid4(),
+            'orden': 0,
+            'id_ejercicio_deporte': ejercicio_deporte_random.id,
+        }
+        plan_random = PlanEjercicio(**plan)
+        session.add(plan_random)
+        session.commit()
+        logger.info('Plan creado: ' + str(plan_random.id))
 
-    logger.info("Fin TestDeportes")
-    db_session.delete(plan_random)
-    db_session.delete(ejercicio_deporte_random)
-    db_session.delete(deporte_random)
-    db_session.commit()
+        yield {
+            'deporte_id': deporte_random.id,
+            'ejercicio_deporte_nombre': ejercicio_deporte_random.nombre,
+            'ejercicio_deporte_id': ejercicio_deporte_random.id,
+            'ejercicio_deporte_deporte_id': ejercicio_deporte_random.deporte.id,
+            'plan_ejercicio_id_plan': plan_random.id_plan,
+        }
+
+        logger.info("Fin TestDeportes")
+        session.delete(plan_random)
+        session.delete(ejercicio_deporte_random)
+        session.delete(deporte_random)
+        session.commit()
 
 
-@pytest.mark.usefixtures("setup_data")
+@ pytest.mark.usefixtures("setup_data")
 class TestDeportes():
 
     def test_obtener_deportes(self):
@@ -80,7 +86,7 @@ class TestDeportes():
 
     def test_obtener_deporte(self, setup_data: dict):
         with app.test_client() as test_client:
-            id_deporte = str(setup_data['deporte'].id)
+            id_deporte = str(setup_data['deporte_id'])
             response = test_client.get(
                 '/gestor-deportes/deportes/obtener_deportes/' + id_deporte)
             response_json = json.loads(response.data)
@@ -91,9 +97,9 @@ class TestDeportes():
 
     def test_obtener_plan(self, setup_data: dict):
         with app.test_client() as test_client:
-            plan_ejercicio: PlanEjercicio = setup_data['plan_ejercicio']
+            plan_ejercicio_id_plan = setup_data['plan_ejercicio_id_plan']
             req = {
-                'id_plan': str(plan_ejercicio.id_plan),
+                'id_plan': str(plan_ejercicio_id_plan),
             }
 
             response = test_client.post(
@@ -107,10 +113,11 @@ class TestDeportes():
 
     def test_obtener_ejercicios_exitoso(self, setup_data: dict):
         with app.test_client() as test_client:
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            ejercicio_deporte_nombre = setup_data['ejercicio_deporte_nombre']
+            ejercicio_deporte_deporte_id = setup_data['ejercicio_deporte_deporte_id']
             body = {
-                'nombre': ejercicio_deporte.nombre,
-                'id_deporte': ejercicio_deporte.deporte.id
+                'nombre': ejercicio_deporte_nombre,
+                'id_deporte': ejercicio_deporte_deporte_id
             }
 
             response = test_client.post(
@@ -121,9 +128,9 @@ class TestDeportes():
 
     def test_obtener_ejercicios_sin_nombre(self, setup_data: dict):
         with app.test_client() as test_client:
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            ejercicio_deporte_deporte_id = setup_data['ejercicio_deporte_deporte_id']
             body = {
-                'id_deporte': ejercicio_deporte.deporte.id
+                'id_deporte': ejercicio_deporte_deporte_id
             }
 
             response = test_client.post(
@@ -133,9 +140,9 @@ class TestDeportes():
 
     def test_obtener_ejercicios_sin_id_deporte(self, setup_data: dict):
         with app.test_client() as test_client:
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            ejercicio_deporte_nombre = setup_data['ejercicio_deporte_nombre']
             body = {
-                'nombre': ejercicio_deporte.nombre,
+                'nombre': ejercicio_deporte_nombre,
             }
 
             response = test_client.post(
@@ -145,10 +152,10 @@ class TestDeportes():
 
     def test_obtener_ejercicios_error_longitud_nombre(self, setup_data: dict):
         with app.test_client() as test_client:
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            ejercicio_deporte_deporte_id = setup_data['ejercicio_deporte_deporte_id']
             body = {
                 'nombre': 'a',
-                'id_deporte': ejercicio_deporte.deporte.id
+                'id_deporte': ejercicio_deporte_deporte_id
             }
 
             response = test_client.post(
@@ -157,46 +164,47 @@ class TestDeportes():
             assert response.status_code == 400
 
     def test_crear_plan(self, setup_data: dict):
-        with app.test_client() as test_client:
-            deporte: Deporte = setup_data['deporte']
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+        with db_session() as session:
+            with app.test_client() as test_client:
+                deporte_id = setup_data['deporte_id']
+                ejercicio_deporte_id = setup_data['ejercicio_deporte_id']
 
-            body = {
-                'id_plan': str(uuid.uuid4()),
-                'id_deporte': deporte.id,
-                'nombre': fake.name(),
-                'ejercicios': [
-                    {
-                        'id': ejercicio_deporte.id,
-                    }
-                ]
-            }
+                body = {
+                    'id_plan': str(uuid.uuid4()),
+                    'id_deporte': deporte_id,
+                    'nombre': fake.name(),
+                    'ejercicios': [
+                        {
+                            'id': ejercicio_deporte_id,
+                        }
+                    ]
+                }
 
-            response = test_client.post(
-                '/gestor-deportes/deportes/crear_plan', json=body)
-            response_json = json.loads(response.data)
+                response = test_client.post(
+                    '/gestor-deportes/deportes/crear_plan', json=body)
+                response_json = json.loads(response.data)
 
-            assert response.status_code == 200
-            assert response_json != None
-            assert response_json['result'] != None
-            assert len(response_json['result']) >= 1
+                assert response.status_code == 200
+                assert response_json != None
+                assert response_json['result'] != None
+                assert len(response_json['result']) >= 1
 
-            for plan_ejercicio in response_json['result']:
-                PlanEjercicio.query.filter_by(
-                    id=plan_ejercicio).delete()
-                db_session.commit()
+                for plan_ejercicio in response_json['result']:
+                    PlanEjercicio.query.filter_by(
+                        id=plan_ejercicio).delete()
+                    session.commit()
 
     def test_crear_plan_sin_id_plan(self, setup_data: dict):
         with app.test_client() as test_client:
-            deporte: Deporte = setup_data['deporte']
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            deporte_id = setup_data['deporte_id']
+            ejercicio_deporte_deporte_id = setup_data['ejercicio_deporte_deporte_id']
 
             body = {
-                'id_deporte': deporte.id,
+                'id_deporte': deporte_id,
                 'nombre': fake.name(),
                 'ejercicios': [
                     {
-                        'id': ejercicio_deporte.id,
+                        'id': ejercicio_deporte_deporte_id,
                     }
                 ]
             }
@@ -208,11 +216,11 @@ class TestDeportes():
 
     def test_crear_plan_sin_ejercicios(self, setup_data: dict):
         with app.test_client() as test_client:
-            deporte: Deporte = setup_data['deporte']
+            deporte_id = setup_data['deporte_id']
 
             body = {
                 'id_plan': str(uuid.uuid4()),
-                'id_deporte': deporte.id,
+                'id_deporte': deporte_id,
                 'nombre': fake.name(),
                 'ejercicios': []
             }
@@ -224,12 +232,11 @@ class TestDeportes():
 
     def test_crear_plan_ejercicios_sin_nombre(self, setup_data: dict):
         with app.test_client() as test_client:
-            deporte: Deporte = setup_data['deporte']
-            ejercicio_deporte: EjercicioDeporte = setup_data['ejercicio_deporte']
+            deporte_id = setup_data['deporte_id']
 
             body = {
                 'id_plan': str(uuid.uuid4()),
-                'id_deporte': deporte.id,
+                'id_deporte': deporte_id,
                 'nombre': fake.name(),
                 'ejercicios': [
                     {
