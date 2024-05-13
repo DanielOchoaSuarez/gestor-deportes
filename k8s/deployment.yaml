@@ -31,10 +31,10 @@ spec:
             periodSeconds: 60
           resources:
             requests:
-              memory: "512Mi"
+              memory: "256Mi"
               cpu: "50m"
             limits:
-              memory: "1024Mi"
+              memory: "512Mi"
               cpu: "500m"
           env:
             - name: DB_HOST
